@@ -61,9 +61,10 @@
 
 ## 9. 长命令输出
 
-- 长命令（编译、测试、打包、长循环）的输出去向不要接 `| tail` 或 `| head`，首要原因是接了管道就没有实时日志可看：界面显示的是命令进程自己的 stdout/stderr 流，接上管道后只剩下游 `tail`/`head` 的输出，`tail` 要等 stdin 读完才吐字，`head` 到行数上限就结束，之后的过程再也看不到（`2>&1 |` 还会合并 stdout 与 stderr、丢掉 stderr 分区）。
+- 长命令（编译、测试、打包、长循环）既不要接 `| tail`、`| head`，也不要重定向到文件（`> /tmp/build.log 2>&1`）：首要原因是这会掐掉界面上的实时日志。界面显示的是命令进程自己的 stdout/stderr 流，接管道后只剩 `tail`/`head` 的输出（`tail` 要等 stdin 读完才吐字，`head` 到行数上限就结束），重定向到文件则一个字节都不送到界面，`make -j$(nproc) > /tmp/build.log 2>&1` 就是典型反例——编译跑多久界面都是空的。
+- 要留档就用 `tee`，它同时写界面和文件，且实测逐行透传不缓冲：`make -j$(nproc) 2>&1 | tee out/build.log`（实时可见，代价是 stderr 并进 stdout）；两路都要实时且分别留档时用 `make -j$(nproc) 2> >(tee out/build.err >&2) | tee out/build.log`。
 - 其次才是故障面：`head` 凑够行数就关闭管道，上游收到 SIGPIPE 被提前杀掉，可能把一次正常构建变成假失败或半截结果。
-- 要看某一段输出就落盘（例如 `out/build.log`）再用 read 或 `rg` 截取；压噪音按内容筛（`rg -v`、`rg 'error|warning'`）或加 `-s`、`--quiet`。
+- 不要靠重定向或截断来压噪音、省上下文：前台结果本来就会截尾并给出 spill 路径，减噪按内容筛（`rg -v`、`rg 'error|warning'`）或加 `-s`、`--quiet`；要看某一段输出，等命令结束后从 `tee` 的日志里用 read 或 `rg` 取。
 - 例外：只读的小命令可以接 `| head` 做快速预览（例如 `rg -l pattern | head`），但要清楚它会让上游提前结束，不要用在有副作用或需要完整结果的命令上。
 
 ## 10. 后台任务
