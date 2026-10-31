@@ -36,11 +36,17 @@
 
 - 支持 out-of-tree 的构建系统指定独立输出目录：`make O=out ...`（Kbuild，含 `defconfig` 与 `modules_install INSTALL_MOD_PATH=out`）、`cmake -S . -B out`、`meson setup out`、`cargo build --target-dir out` 或 `CARGO_TARGET_DIR=out`、`pip wheel -w out`。
 
-## 7. 后台任务
+## 7. 长命令输出
+
+- 运行中的长命令（编译、测试、打包、长循环）不要接 `| tail`、`| head`，也不要重定向到文件：面板订阅的是进程自己的输出流，接管道或重定向就没有实时日志，`head` 还会让上游提前结束。短命令和只读预览接 `| head` 不受此限。
+- 需要留档就用 `tee`：`make -j$(nproc) 2>&1 | tee out/build.log`，界面仍然实时，跑完再从日志里过滤。
+- 对已经结束或已落盘的内容用 `tail -n`、`head -n`、`rg` 过滤是正常做法，也是事后定位错误的首选。
+
+## 8. 后台任务
 
 - 起了后台任务不要用 `sleep` 等它：完成时会自动收到会话内通知；等待期间去做别的独立步骤，确需阻塞就用 `job_output` 加 `wait: true`，不要用 `sleep` 占住整轮。
 
-## 8. 搜索：先工具，退回 shell 只用 rg
+## 9. 搜索：先工具，退回 shell 只用 rg
 
 - 搜索文件内容优先用内置 `grep` 工具；需要退回 shell 时只用 `rg`，不用 `grep`、`egrep`、`fgrep`；两者都没有才用 `grep`，并在回答里说明原因。
 - `rg -r` 是 `--replace` 而不是 recursive，后面必须跟替换文本，并会吞掉下一个参数；它只改打印结果。ripgrep 默认递归，限制层数用 `--max-depth N`。
