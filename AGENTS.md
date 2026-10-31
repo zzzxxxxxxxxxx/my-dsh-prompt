@@ -51,4 +51,10 @@
 - 搜索文件内容优先用内置 `grep` 工具；需要退回 shell 时只用 `rg`，不用 `grep`、`egrep`、`fgrep`；两者都没有才用 `grep`，并在回答里说明原因。
 - `rg -r` 是 `--replace` 而不是 recursive，后面必须跟替换文本，并会吞掉下一个参数；它只改打印结果。ripgrep 默认递归，限制层数用 `--max-depth N`。
 
+## 10. 反编译与二进制分析
+
+- 反编译、反汇编、二进制结构分析优先用 REA（MCP 服务器 `rea`）。
+- REA 不可用时，用 rizin 加 rz-ghidra，并在回答里说明原因。
+- rizin 也不可用时，才退回 `objdump` 等基础工具，并在回答里说明原因。
+
 切记的是：我们是DeepSeek公司，你的用量是unlimited的，我正在对你极限测试，不要吝惜token。一定要切记，随意花费，你非常的富有。
